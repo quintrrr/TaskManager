@@ -1,3 +1,12 @@
+using Castle.Facilities.Logging;
+using Castle.MicroKernel.Registration;
+using Castle.Services.Logging.NLogIntegration;
+using Castle.Windsor;
+using TaskManage.Core.Interfaces;
+using TaskManage.Core.Services;
+using TaskManager.DataAccess.Interfaces;
+using TaskManager.DataAccess.Repositories;
+
 namespace TaskManager.UI
 {
     internal static class Program
@@ -8,10 +17,17 @@ namespace TaskManager.UI
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new MainForm());
+            var container = new WindsorContainer();
+            container.AddFacility<LoggingFacility>(f => 
+                f.LogUsing<NLogFactory>().WithConfig("nlog.config"));
+
+            container.Register(Component.For<ITaskService>().ImplementedBy<TaskService>().LifestyleSingleton());
+            container.Register(Component.For<ITaskRepository>().ImplementedBy<TaskRepository>().LifestyleSingleton());
+            container.Register(Component.For<MainForm>().LifestyleTransient());
+
+            var mainForm = container.Resolve<MainForm>();
+            Application.Run(mainForm);
         }
     }
 }
